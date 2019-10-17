@@ -1,0 +1,6 @@
+name "korwin-bot"
+description "Slack bot preaching JKM's wisdoms"
+authors "Wiktor Żurawik"
+copyright "Copyright © 2019, Wiktor Żurawik"
+license "proprietary"
+dependency "vibe-d" version="~>0.8.6"

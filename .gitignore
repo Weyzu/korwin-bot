@@ -1,0 +1,15 @@
+.dub
+dub.selections.json
+docs.json
+__dummy.html
+docs/
+korwin-bot.so
+korwin-bot.dylib
+korwin-bot.dll
+korwin-bot.a
+korwin-bot.lib
+korwin-bot-test-*
+*.exe
+*.o
+*.obj
+*.lst
