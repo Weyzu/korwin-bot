@@ -13,3 +13,4 @@ korwin-bot-test-*
 *.o
 *.obj
 *.lst
+.vscode/
