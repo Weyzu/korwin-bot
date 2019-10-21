@@ -9,7 +9,7 @@ import vibe.web.rest;
 
 import korwin_bot.wisdoms;
 
-auto keySearchPhrase = ctRegex!(`.*(korwin(?!(-|\s)?piotrowska))|JKM.*`, "i");
+auto keySearchPhrase = ctRegex!(`.*(korwin(?!(-|\s)?piotrowska))|JKM|krul.*`, "i");
 
 @path("/")
 interface APIRoot
