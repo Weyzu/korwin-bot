@@ -8,6 +8,7 @@ import vibe.data.json;
 import vibe.http.client;
 import vibe.web.rest;
 
+import krowin_bot.requests;
 import korwin_bot.structs;
 import korwin_bot.wisdoms;
 
@@ -16,7 +17,6 @@ auto keySearchPhrase = ctRegex!(`.*(korwin(?!(-|\s)?piotrowska))|JKM|krul.*`, "i
 @path("/")
 interface APIRoot
 {
-    @safe
     @bodyParam("callback") @path("/callbacks") @method(HTTPMethod.POST)
     Json receiveEvent(SlackCallback callback);
 }
@@ -26,15 +26,14 @@ class API : APIRoot
 public:
     this(const string token, const string oAuthToken)
     {
-        this.token_ = token;
-        this.oAuthToken_ = oAuthToken;
+        this.slackApiClient_ = new SlackWebAPIClient(token, oAuthToken);
     }
 
-@safe
-override:
+override
+{
     Json receiveEvent(SlackCallback callback)
     {
-        if (callback.token != this.token_)
+        if (callback.token != this.slackApiClient_.token)
         {
             throw new RestException(401, serializeToJson(""));
         }
@@ -44,59 +43,37 @@ override:
             return serializeToJson(["challenge": callback.challenge]);
         }
 
-        if (callback.event.channel !in this.channelsInfos_)
+        if (callback.event.channel !in this.conversationInfos_)
         {
-            requestHTTP(
-                format(
-                    "https://slack.com/api/channels.info?token=%s&channel=%s",
-                    this.oAuthToken_,
-                    callback.event.channel
-                ),
-                (scope request) {
-                    request.method = HTTPMethod.GET;
-                    request.headers["Content-Type"] = "application/x-www-form-urlencoded";
-                },
-                (scope response) {
-                    this.channelsInfos_[callback.event.channel] = deserializeJson!ChannelInfo(response.readJson["channel"]);
-                    logInfo("Channel %s info cached.", callback.event.channel);
-                }
-            );
+            this.conversationInfos_[callback.event.channel] = this.slackApiClient_.requestConversationInfo(callback.event.channel);
+            logInfo("Channel %s info cached.", callback.event.channel);
         }
 
         if (matchFirst(callback.event.text, keySearchPhrase))
         {
-            const auto channelInfo = this.channelsInfos_[callback.event.channel];
+            const Conversation conversationInfo = this.conversationInfos_[callback.event.channel];
 
-            if (!channelInfo.is_general && channelInfo.is_member)
+            if (!conversationInfo.is_general && conversationInfo.is_member)
             {
-                requestHTTP(
-                    "https://slack.com/api/chat.postMessage",
-                    (scope request) {
-                        request.method = HTTPMethod.POST;
-                        request.headers["Authorization"] = "Bearer " ~ this.oAuthToken_;
-                        request.writeJsonBody(
-                            [
-                                "token": this.token_,
-                                "channel": callback.event.channel,
-                                "text": Wisdoms.getInstance().generate()
-                            ]
-                        );
-                    },
-                    (scope response) {
-                        logInfo("%s", response.readJson);
-                    }
+                this.slackApiClient_.postMessage(
+                    callback.event.channel,
+                    Wisdoms.getInstance().generate()
                 );
             }
             else
             {
-                logInfo("Not a member of channel %s. Skipping.", callback.event.channel);
+                logInfo(
+                    "Channel '%s' of team '%s' not suitable for posting. Skipping.",
+                    callback.event.channel,
+                    callback.team_id
+                );
             }
         }
         return serializeToJson("");
     }
+}
 
 private:
-    const string token_;
-    const string oAuthToken_;
-    ChannelInfo[string] channelsInfos_;
+    SlackWebAPIClient slackApiClient_;
+    Conversation[string] conversationInfos_;
 }

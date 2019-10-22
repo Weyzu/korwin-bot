@@ -1,5 +1,7 @@
 module korwin_bot.structs;
 
+import std.meta;
+
 import vibe.data.json;
 
 struct SlackCallback
@@ -20,11 +22,11 @@ struct MessageChannelsEvent
 {
     string type;
     string channel;
-    string user;
+    @optional string user;
     string text;
     string ts;
     string event_ts;
-    string channel_type;
+    @byName ChannelType channel_type;
 }
 
 enum CallbackType
@@ -33,20 +35,35 @@ enum CallbackType
     event_callback
 }
 
-struct ChannelInfo
+enum ChannelType
+{
+    channel,
+    group
+}
+
+struct Conversation
 {
     string id;
     string name;
     bool is_channel;
+    bool is_group;
+    bool is_im;
     int created;
     string creator;
     bool is_archived;
     bool is_general;
+    int unlinked;
     string name_normalized;
+    @optional bool is_read_only;
     bool is_shared;
+    bool is_ext_shared;
     bool is_org_shared;
+    bool is_pending_ext_shared;
     bool is_member;
     bool is_private;
     bool is_mpim;
-    string[] members;
+    string last_read;
+    @optional string[] previous_names;
+    @optional int num_members;
+    @optional string locale;
 }

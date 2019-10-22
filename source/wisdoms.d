@@ -33,6 +33,7 @@ public:
         }
     }
 
+    @safe
     string generate()
     {
         auto rnd = Random(unpredictableSeed);
