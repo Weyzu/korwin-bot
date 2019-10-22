@@ -33,6 +33,8 @@ override
 {
     Json receiveEvent(SlackCallback callback)
     {
+        logDebug("Callback: %s", callback.serializeToJsonString());
+
         if (callback.token != this.slackApiClient_.token)
         {
             throw new RestException(401, serializeToJson(""));
